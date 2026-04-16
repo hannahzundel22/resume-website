@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Random Recipe Generator | Hannah's Happy Place</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Lora:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --green-dark:  #3a5a40;
+      --green-mid:   #588157;
+      --green-light: #a3b18a;
+      --cream:       #f8f5ee;
+      --white:       #ffffff;
+      --tan:         #dad7cd;
+      --text-dark:   #1f2d1f;
+      --text-mid:    #4a5e4a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background-color: var(--cream);
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(163,177,138,0.2) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(88,129,87,0.12) 0%, transparent 40%);
+      color: var(--text-dark);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background-color: var(--green-dark);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    nav .brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--cream);
+      text-decoration: none;
+    }
+    nav .back-link {
+      font-family: 'Lora', serif;
+      font-size: 0.85rem;
+      color: var(--green-light);
+      text-decoration: none;
+      letter-spacing: 0.06em;
+      transition: color 0.2s;
+    }
+    nav .back-link:hover { color: var(--cream); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 100%);
+      color: var(--cream);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      color: var(--cream);
+      margin-bottom: 0.75rem;
+      line-height: 1.15;
+    }
+    .hero h1 em { color: var(--green-light); font-style: italic; }
+    .hero p {
+      color: var(--tan);
+      font-size: 1rem;
+      max-width: 480px;
+      margin: 0 auto 2rem;
+      line-height: 1.8;
+    }
+
+    /* ── GENERATE BUTTON ── */
+    .btn-generate {
+      display: inline-block;
+      background-color: var(--green-light);
+      color: var(--green-dark);
+      border: none;
+      padding: 0.85rem 2.5rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      letter-spacing: 0.03em;
+    }
+    .btn-generate:hover  { background-color: var(--cream); }
+    .btn-generate:active { transform: scale(0.97); }
+    .btn-generate:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── MAIN CONTENT ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── LOADER ── */
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 3rem 0;
+    }
+    .loader-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--tan);
+      border-top-color: var(--green-mid);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { color: var(--text-mid); font-style: italic; }
+
+    /* ── RECIPE CARD ── */
+    #recipe-card {
+      display: none;
+      animation: fadeUp 0.5s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .recipe-header {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+    }
+    .recipe-img {
+      width: 260px;
+      height: 200px;
+      object-fit: cover;
+      border-top: 4px solid var(--green-light);
+      flex-shrink: 0;
+    }
+    .recipe-meta { flex: 1; min-width: 200px; }
+    .recipe-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      color: var(--green-dark);
+      line-height: 1.2;
+      margin-bottom: 0.6rem;
+    }
+    .badge-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .badge {
+      background-color: var(--green-light);
+      color: var(--green-dark);
+      font-family: 'Lora', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+    }
+    .badge.origin { background-color: var(--tan); }
+
+    .yt-link {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--green-mid);
+      text-decoration: none;
+      border-bottom: 1px solid var(--green-light);
+      transition: color 0.2s;
+    }
+    .yt-link:hover { color: var(--green-dark); }
+
+    /* ── SECTION DIVIDER ── */
+    .section-label {
+      font-family: 'Lora', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--green-mid);
+      margin-bottom: 1rem;
+    }
+    .green-line {
+      width: 36px; height: 3px;
+      background-color: var(--green-light);
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── INGREDIENTS ── */
+    .ingredients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 3rem;
+    }
+    .ingredient-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.92rem;
+      color: var(--text-mid);
+      padding: 0.5rem 0.75rem;
+      background-color: var(--white);
+      border-left: 3px solid var(--tan);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.2s;
+    }
+    .ingredient-item.checked {
+      border-color: var(--green-mid);
+      text-decoration: line-through;
+      color: var(--green-light);
+    }
+    .ingredient-item input[type="checkbox"] {
+      accent-color: var(--green-mid);
+      width: 14px; height: 14px;
+      flex-shrink: 0;
+    }
+    .ingredient-measure {
+      font-weight: 600;
+      color: var(--green-dark);
+      margin-right: 0.2rem;
+    }
+
+    /* ── INSTRUCTIONS ── */
+    .instructions-list {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+    }
+    .instructions-list li {
+      counter-increment: step;
+      display: flex;
+      gap: 1.2rem;
+      margin-bottom: 1.5rem;
+      align-items: flex-start;
+    }
+    .instructions-list li::before {
+      content: counter(step);
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--green-light);
+      line-height: 1;
+      flex-shrink: 0;
+      min-width: 28px;
+    }
+    .instructions-list li p {
+      font-size: 0.95rem;
+      line-height: 1.85;
+      color: var(--text-mid);
+      padding-top: 0.1rem;
+    }
+
+    /* ── TRY ANOTHER BUTTON ── */
+    .try-another-row {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--tan);
+    }
+    .try-another-row p {
+      color: var(--text-mid);
+      font-style: italic;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background-color: var(--green-dark);
+      color: var(--green-light);
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.82rem;
+      font-family: 'Lora', serif;
+    }
+    footer a { color: var(--tan); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .recipe-header { flex-direction: column; }
+      .recipe-img { width: 100%; height: 220px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <span class="brand">🥧 Recipe Generator</span>
+    <a href="baking.html" class="back-link">← Back to Hannah's Happy Place</a>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Discover Something <em>Delicious</em></h1>
+    <p>Hit the button and get a completely random recipe from around the world — you might just find your next favorite dish.</p>
+    <button class="btn-generate" id="generate-btn" onclick="fetchRecipe()">✨ Generate a Recipe</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="container">
+
+    <!-- LOADER -->
+    <div class="loader" id="loader">
+      <div class="loader-spinner"></div>
+      <p>Finding something delicious…</p>
+    </div>
+
+    <!-- RECIPE CARD -->
+    <div id="recipe-card">
+
+      <div class="recipe-header">
+        <img id="recipe-img" src="" alt="" class="recipe-img"/>
+        <div class="recipe-meta">
+          <h2 class="recipe-title" id="recipe-name"></h2>
+          <div class="badge-row">
+            <span class="badge" id="recipe-category"></span>
+            <span class="badge origin" id="recipe-area"></span>
+          </div>
+          <a id="recipe-yt" href="#" target="_blank" rel="noopener" class="yt-link" style="display:none;">▶ Watch on YouTube</a>
+        </div>
+      </div>
+
+      <!-- INGREDIENTS -->
+      <p class="section-label">What You'll Need</p>
+      <div class="green-line"></div>
+      <p style="font-size:0.82rem;color:var(--green-mid);margin-bottom:1rem;font-style:italic;">Click an ingredient to check it off as you gather.</p>
+      <div class="ingredients-grid" id="ingredients-list"></div>
+
+      <!-- INSTRUCTIONS -->
+      <p class="section-label">How to Make It</p>
+      <div class="green-line"></div>
+      <ol class="instructions-list" id="instructions-list"></ol>
+
+      <!-- TRY ANOTHER -->
+      <div class="try-another-row">
+        <p>Not feeling this one?</p>
+        <button class="btn-generate" onclick="fetchRecipe()">🎲 Try Another Recipe</button>
+      </div>
+
+    </div><!-- end recipe-card -->
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Recipes from <a href="https://www.themealdb.com" target="_blank" rel="noopener">TheMealDB</a> open API &nbsp;·&nbsp; <a href="baking.html">Back to Hannah's Happy Place</a></p>
+  </footer>
+
+  <script>
+    async function fetchRecipe() {
+      const btn    = document.getElementById('generate-btn');
+      const loader = document.getElementById('loader');
+      const card   = document.getElementById('recipe-card');
+
+      // Show loader, hide card
+      card.style.display  = 'none';
+      loader.style.display = 'block';
+      btn.disabled = true;
+
+      try {
+        const res  = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
+        const data = await res.json();
+        const meal = data.meals[0];
+        renderRecipe(meal);
+      } catch (err) {
+        loader.innerHTML = '<p style="color:#c0392b;">Could not load a recipe. Check your connection and try again.</p>';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function renderRecipe(meal) {
+      // Basic fields
+      document.getElementById('recipe-name').textContent     = meal.strMeal;
+      document.getElementById('recipe-category').textContent = meal.strCategory;
+      document.getElementById('recipe-area').textContent     = meal.strArea || 'International';
+      document.getElementById('recipe-img').src              = meal.strMealThumb;
+      document.getElementById('recipe-img').alt              = meal.strMeal;
+
+      // YouTube link
+      const ytEl = document.getElementById('recipe-yt');
+      if (meal.strYoutube) {
+        ytEl.href          = meal.strYoutube;
+        ytEl.style.display = 'inline';
+      } else {
+        ytEl.style.display = 'none';
+      }
+
+      // Ingredients (API gives strIngredient1–20 + strMeasure1–20)
+      const ingredientEl = document.getElementById('ingredients-list');
+      ingredientEl.innerHTML = '';
+      for (let i = 1; i <= 20; i++) {
+        const name    = meal['strIngredient' + i];
+        const measure = meal['strMeasure'    + i];
+        if (!name || !name.trim()) break;
+        const item = document.createElement('label');
+        item.className = 'ingredient-item';
+        item.innerHTML = `
+          <input type="checkbox" onchange="this.closest('label').classList.toggle('checked', this.checked)"/>
+          <span><span class="ingredient-measure">${measure ? measure.trim() : ''}</span> ${name.trim()}</span>
+        `;
+        ingredientEl.appendChild(item);
+      }
+
+      // Instructions — split on newlines, filter blanks
+      const instrEl = document.getElementById('instructions-list');
+      instrEl.innerHTML = '';
+      const steps = meal.strInstructions
+        .split(/\r?\n/)
+        .map(s => s.replace(/^\d+[\.\)]\s*/, '').trim())
+        .filter(s => s.length > 10);
+      steps.forEach(step => {
+        const li = document.createElement('li');
+        li.innerHTML = `<p>${step}</p>`;
+        instrEl.appendChild(li);
+      });
+
+      // Show card, hide loader
+      document.getElementById('loader').style.display = 'none';
+      const card = document.getElementById('recipe-card');
+      card.style.display = 'block';
+      // Re-trigger animation
+      card.style.animation = 'none';
+      card.offsetHeight; // reflow
+      card.style.animation = '';
+    }
+  </script>
+
+</body>
+</html>
